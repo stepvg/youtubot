@@ -1,0 +1,6 @@
+security_keys.py
+**/*.db
+**/*.log
+**/*.json
+**/*.tar.gz
+**/__pycache__
