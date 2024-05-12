@@ -1,0 +1,33 @@
+version: '3.8'
+services:
+
+  redis_server:
+    env_file:
+      - .env
+    image: redis:7.2.3-alpine3.18
+    volumes:
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./data/redis:/var/lib/redis
+    networks:
+      - back_net
+    entrypoint: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
+    restart: always
+
+  youtubot:
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=redis_server
+    depends_on:
+      - redis_server
+    volumes:
+      - ./data/youtubot:/usr/local/app/data
+    build:
+      context: youtubot/.
+      dockerfile: Dockerfile
+    networks:
+      - back_net
+    restart: always
+
+networks:
+  back_net: {}

@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "youtubot"
+version = "0.1.0"
+description = ""
+authors = ["Viacheslav <stepvg@ya.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+redis = "^5.0.4"
+aiogram = "^3.5.0"
+python-dotenv = "^1.0.1"
+youtube-transcript-api = "^0.6.2"
+langchain = "^0.1.17"
+gigachat = "^0.1.23"
+langchain-community = "^0.0.36"
+faiss-cpu = "^1.8.0"
+torch = {version = "^2.3.0+cpu", source = "pytorch_cpu"}
+sentence-transformers = "^2.7.0"
+
+
+[[tool.poetry.source]]
+name = "pytorch_cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
+
+
+[[tool.poetry.source]]
+name = "pytorch_mkl"
+url = "https://download.pytorch.org/whl/mkl"
+priority = "explicit"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

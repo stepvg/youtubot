@@ -1,0 +1,7 @@
+**/*.db
+**/*.log
+**/*.json
+**/*.tar.gz
+**/data
+**/__pycache__
+**/security_keys.py
