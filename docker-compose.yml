@@ -3,7 +3,7 @@ services:
 
   redis_server:
     env_file:
-      - .env
+      - ./.env
     image: redis:7.2.3-alpine3.18
     volumes:
       - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
@@ -15,7 +15,7 @@ services:
 
   youtubot:
     env_file:
-      - .env
+      - ./.env
     environment:
       - REDIS_HOST=redis_server
     depends_on:
@@ -23,6 +23,8 @@ services:
     volumes:
       - ./data/youtubot:/usr/local/app/data
     build:
+      args:
+        - HUGGING_FACE_EMBEDDINGS=${HUGGING_FACE_EMBEDDINGS}
       context: youtubot/.
       dockerfile: Dockerfile
     networks:
