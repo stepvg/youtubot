@@ -12,7 +12,7 @@ from gigachat.exceptions import GigaChatException
 
 from aiogram.exceptions import AiogramError
 
-import os, re, asyncio, pathlib, logging, itertools, datetime
+import os, re, asyncio, logging, itertools, datetime
 import gigachat
 import youtube_transcript_api as yta
 import config as cf
@@ -154,31 +154,29 @@ class UsersLLMAnswer:
         """ Создать или загрузить ранее созданое Faiss хранилище по id видео роликов
         
         Args:
-            text (str): Текст пользовательского запроса
+            video_id (str): Id виде из youtube
         
         Returns:
             FAISS: Векторное хранилище
         """
-        faiss_pkl_file_path = pathlib.Path(cf.data_faiss_path) / f'{video_id}.faiss_pkl'
-        faiss_pkl_file_path.parent.mkdir(parents=True, exist_ok=True)
-        try:
-            with open(faiss_pkl_file_path, 'rb') as fl:
-                # Загрузить векторное хранилище из файла 
-                search_index = FAISS.deserialize_from_bytes( embeddings=self.embeddinger, serialized=fl.read())
-        except FileNotFoundError:
+        redis_key = f'faiss_db/{video_id}'
+        faiss_db = await self.redis.get(redis_key)
+        if faiss_db:
+            # Загрузить векторное хранилище из файла 
+            return FAISS.deserialize_from_bytes( embeddings=self.embeddinger, serialized=faiss_db)
             
-            # Загрузить субтитры из видео 
-            transcript, language_code = self.load_youtube_transcript(video_id)
+        # Загрузить субтитры из видео 
+        transcript, language_code = self.load_youtube_transcript(video_id)
 
-            # Создать список документов из чанков субтитров
-            docs = self.join_transcript_to_docs(transcript, cf.max_chunk_size)
+        # Создать список документов из чанков субтитров
+        docs = self.join_transcript_to_docs(transcript, cf.max_chunk_size)
 
-            # Создать векторное хранилище
-            search_index = await FAISS.afrom_documents( docs, self.embeddinger )
+        # Создать векторное хранилище
+        search_index = await FAISS.afrom_documents( docs, self.embeddinger )
 
-            with open(faiss_pkl_file_path, 'wb') as fl:
-                # Сохранить в файл векторное хранилище
-                fl.write(search_index.serialize_to_bytes())    # serializes the faiss
+        # Сохранить в файл векторное хранилище
+        await self.redis.set(redis_key, search_index.serialize_to_bytes())      # serializes the faiss
+
         return search_index
 
 
@@ -218,13 +216,13 @@ class UsersLLMAnswer:
         Returns:
             None
         """
-        redis_key = f'youtube/{id}'
+        redis_key = f'summarizing/{id}'
         
         # Получить сохраненную сумаризацию из БД
         text = await self.redis.get(redis_key)
         if text:
-            for chunk in text.split('\n'):
-                await self.a_post(msg, chunk)
+            for chunk in text.split(b'\n'):
+                await self.a_post(msg, chunk.decode())
             return
 
         # Получить список, сортированых по времени, чанков текста субтитров из Faiss хранилища
@@ -243,10 +241,10 @@ class UsersLLMAnswer:
             # Сумаризовать блок текста до 25 слов приблизительно
             text = await self.a_query_answer(msg, chain, {'max_words': '25', 'text': doc})
             if text:
-                chunks.append(text)
+                chunks.append(text.encode())
         if chunks:
             # Объеденить сумаризованные блоки и отправить в БД
-            await self.redis.set(redis_key, '\n'.join(chunks))
+            await self.redis.set(redis_key, b'\n'.join(chunks))
 
 
     def joiner(self, docs):
@@ -266,11 +264,11 @@ class UsersLLMAnswer:
             FAISS: Векторное хранилище
         """
         faiss = await self.create_faiss(id)
+        faiss_cell = faiss.as_retriever(k=cf.chunks_by_query_from_faiss) | self.joiner
         retrieval_pass = RunnableParallel( {
-            "context": faiss.as_retriever(k=cf.chunks_by_query_from_faiss) | self.joiner,     # as_retriever(search_kwargs={'k': 3})
+            "context": faiss_cell,
             "query": RunnablePassthrough() })
         chain = retrieval_pass | self.prompt | self.llm | StrOutputParser()
-        #~ chain = self.llm | StrOutputParser()
         return chain, faiss
 
 

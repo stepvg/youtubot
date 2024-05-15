@@ -66,6 +66,7 @@ docker-compose up -d --build
 
 The bot's behavior and settings can be configured via environment variables or a `.env` file. The following variables are available:
 
+- `HUGGING_FACE_EMBEDDINGS`: The name of the embeddings model, which can be obtained from the [huggingface](https://huggingface.co/).
 - `TELEGRAM_BOT_TOKEN`: Telegram bot token obtained from BotFather.
 - `GIGACHAT_CREDENTIALS`: API key for accessing the GigaChat Large Language Model service.
 - `REDIS_HOST`: Hostname for the Redis container.

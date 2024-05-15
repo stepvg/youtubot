@@ -24,8 +24,8 @@ async def main():
     db = redis.Redis(
         host=os.getenv('REDIS_HOST', 'localhost'),
         port=os.environ['REDIS_PORT'], 
-        password=os.getenv('REDIS_PASSWORD'),
-        decode_responses=True)                                                                                      # automatically convert responses from bytes to strings
+        password=os.getenv('REDIS_PASSWORD') )
+        # decode_responses=True)                                                                                      # automatically convert responses from bytes to strings
     logger.info('Redis connected.')
 
     try:

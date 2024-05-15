@@ -3,9 +3,6 @@
 # формат вывода логера
 logging_format                      = f"%(asctime)s [%(levelname)s:%(name)s] - %(message)s -> %(pathname)s, line %(lineno)d, in %(funcName)s"
 
-# файлы векторного хранилища
-data_faiss_path                     = 'data/faiss_db'
-
 # кол-во символов в одном чанке векторного хранилища
 max_chunk_size                    = 500
 
